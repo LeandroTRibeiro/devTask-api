@@ -26,6 +26,4 @@ server.use(router);
 
 server.use((req: Request, res: Response) => res.status(404).send({'not found': true}));
 
-export const app = server.listen(process.env.PORT, () => {
-    if(!process.env.NODE_ENV) console.log('{ server: true }')
-});
+server.listen(process.env.PORT, () => console.log('{ server: true }'));
