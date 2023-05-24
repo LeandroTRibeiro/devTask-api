@@ -9,7 +9,7 @@ router.get('/ping', (req: Request, res: Response) => {
     res.send({'pong': 'true'});
 });
 
-// user routes
+// user - login register recover password routes
 
 router.post('/devtask/auth/auto-login', UserController.autoLogin);
 router.post('/devtask/login', UserMiddleware.login, UserController.login)

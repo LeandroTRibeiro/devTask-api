@@ -1,5 +1,5 @@
 import { NextFunction, Request, Response } from "express";
-import * as ValidateUserData from "../helpers/ValidateUserData";
+import * as ValidateUserData from "../validators/ValidateUserData";
 import User from "../models/User";
 
 export const signin = async (req: Request, res: Response, next: NextFunction) => {
