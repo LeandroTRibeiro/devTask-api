@@ -1,10 +1,12 @@
 import express, { Request, Response } from 'express';
+
 import { mongodbConnect } from './db/mongodb';
 
 import dotenv from 'dotenv';
 import cors from 'cors';
 import router from './routes/routes';
 import path from 'path';
+import { errorHandler } from './middlewares/ImageMiddlewares';
 
 dotenv.config();
 
@@ -25,6 +27,8 @@ server.use(express.json());
 server.use(router);
 
 server.use((req: Request, res: Response) => res.status(404).send({'not found': true}));
+
+server.use(errorHandler);
 
 export const app = server.listen(process.env.PORT, () => {
     if(!process.env.NODE_ENV) console.log('{ server: true }')

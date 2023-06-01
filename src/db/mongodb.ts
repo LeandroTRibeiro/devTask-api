@@ -6,11 +6,21 @@ dotenv.config();
 mongoose.set('strictQuery', true);
 
 export const mongodbConnect = async () => {
+
     try {
-        await connect(process.env.DATABASE_URL as string);
-        if(!process.env.NODE_ENV) console.log('{ mongodb: true }');
+
+        if(!process.env.NODE_ENV) {
+            await connect(process.env.DATABASE_URL as string);
+            console.log('{ mongodb: true }');
+            return;
+        };
+
+        await connect(process.env.DATABASE_URL_TEST as string);
+
     } catch(error) {
+
         if(!process.env.NODE_ENV) console.log('{mongodb : false}', error);
+        
     };
 };
 

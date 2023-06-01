@@ -1,32 +1,32 @@
 import request from 'supertest';
 import { app } from '../server';
 import { disconnect } from 'mongoose';
-import * as UserController from '../controllers/UserController';
+
+// As rotas ja estão sendo testadas pelos testes dos controllers aqui testo somente a rota /ping e not found
+
+afterAll((done) => {
+    app.close( async () => {
+        disconnect();
+        done();
+    });
+});
 
 describe('Gerenciador de Rotas', () => {
 
-  it('Deve retornar um objeto "pong" ao fazer uma requisição GET para /ping', async () => {
+
+  it('deve retornar um objeto "pong" ao fazer uma requisição GET para /ping', async () => {
     const response = await request(app).get('/ping');
     expect(response.status).toBe(200);
     expect(response.body).toEqual({ pong: 'true' });
   });
 
-  it('Deve chamar UserController.autoLogin para /devtask/auth/auto-login', async () => {
-    const mockAutoLogin = jest.fn();
-    jest.mock(UserController.autoLogin, () => ({
-      autoLogin: mockAutoLogin,
-    }));
-
-    const response = await request(app).post('/devtask/auth/auto-login');
-    expect(response.status).toBe(200);
-    expect(mockAutoLogin).toHaveBeenCalled();
-  });
 });
 
+describe('Teste do servidor', () => {
+  it('deve retornar status 404 para uma rota inexistente', async () => {
+    const response = await request(app).get('/rota-inexistente');
 
-afterAll((done) => {
-    app.close(() => {
-        disconnect();
-        done();
-    });
+    expect(response.status).toBe(404);
+    expect(response.body).toEqual({ 'not found': true });
+  });
 });

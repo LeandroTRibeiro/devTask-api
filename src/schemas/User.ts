@@ -1,27 +1,27 @@
 import { Schema, model, connection, Model } from "mongoose";
 
 type UserType = {
+    _id: Schema.Types.ObjectId,
     dateCreated: Date,
-    birthday: Date,  
-    name : {
-        firstName: string,
-        lastName: string
-    },
+    birthday: string,  
+    firstName: string,
+    lastName: string,
     email: string,
     password: string, 
-    token: string
+    token: string,
+    avatar: string
 };
 
 const schema = new Schema<UserType>({
+    _id: { type: Schema.Types.ObjectId, auto: true },
     dateCreated: {type: Date, required: true, default: new Date()},
-    birthday: {type: Date},
-    name: {
-        firstName: {type: String, required: true},
-        lastName: {type: String, required: true}
-    },
+    birthday: {type: String},
+    firstName: {type: String, required: true},
+    lastName: {type: String, required: true},
     email: {type: String, required: true},
     password: {type: String, required: true},
-    token: {type: String, required: true}
+    token: {type: String, required: true},
+    avatar: {type: String}
 });
 
 const modelName = 'User';

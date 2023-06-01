@@ -5,9 +5,9 @@ import {
   forgotPassword,
   recoverPassword,
 } from './UserMiddlewares';
-import User from '../models/User';
+import User from '../schemas/User';
 
-jest.mock('../models/User', () => ({
+jest.mock('../schemas/User', () => ({
   findOne: jest.fn(),
 }));
 
@@ -41,11 +41,6 @@ describe('signin middleware', () => {
 
   it('deve chamar o próximo middleware se todos os dados de entrada forem fornecidos corretamente e forem válidos', async () => {
 
-    req.body.firstName = 'John';
-    req.body.lastName = 'Doe';
-    req.body.email = 'john.doe@example.com';
-    req.body.password = 'password123';
-
     User.findOne = jest.fn().mockResolvedValue(null);
 
     await signin(req, res, next);
@@ -62,9 +57,6 @@ describe('signin middleware', () => {
   it('deve retornar um erro de status 400 se algum dos dados de entrada estiver faltando', async () => {
 
     req.body.firstName = '';
-    req.body.lastName = 'Doe';
-    req.body.email = 'john.doe@example.com';
-    req.body.password = 'password123';
 
     await signin(req, res, next);
 
@@ -73,26 +65,20 @@ describe('signin middleware', () => {
 
     req.body.firstName = 'John';
     req.body.lastName = '';
-    req.body.email = 'john.doe@example.com';
-    req.body.password = 'password123';
 
     await signin(req, res, next);
 
     expect(res.status).toHaveBeenCalledWith(400);
     expect(res.json).toHaveBeenCalledWith({ error: 'lastName required.' });
 
-    req.body.firstName = 'John';
     req.body.lastName = 'Doe';
     req.body.email = '';
-    req.body.password = 'password123';
 
     await signin(req, res, next);
 
     expect(res.status).toHaveBeenCalledWith(400);
     expect(res.json).toHaveBeenCalledWith({ error: 'email required.' });
 
-    req.body.firstName = 'John';
-    req.body.lastName = 'Doe';
     req.body.email = 'john.doe@example.com';
     req.body.password = '';
 
@@ -106,9 +92,6 @@ describe('signin middleware', () => {
   it('deve retornar um erro de status 400 se algum dos dados de entrada for inválido', async () => {
 
     req.body.firstName = '    ';
-    req.body.lastName = 'Doe';
-    req.body.email = 'john.doe@example.com';
-    req.body.password = 'password123';
 
     await signin(req, res, next);
 
@@ -117,26 +100,20 @@ describe('signin middleware', () => {
 
     req.body.firstName = 'John';
     req.body.lastName = '    ';
-    req.body.email = 'john.doe@example.com';
-    req.body.password = 'password123';
 
     await signin(req, res, next);
 
     expect(res.status).toHaveBeenCalledWith(400);
     expect(res.json).toHaveBeenCalledWith({ error: 'lastName invalid.' });
 
-    req.body.firstName = 'John';
     req.body.lastName = 'Doe';
     req.body.email = '     ';
-    req.body.password = 'password123';
 
     await signin(req, res, next);
 
     expect(res.status).toHaveBeenCalledWith(400);
     expect(res.json).toHaveBeenCalledWith({ error: 'email invalid.' });
 
-    req.body.firstName = 'John';
-    req.body.lastName = 'Doe';
     req.body.email = 'john.doe@example.com';
     req.body.password = '    ';
 
@@ -185,9 +162,6 @@ describe('login middleware', () => {
 
   it('deve chamar o próximo middleware se todos os dados de entrada forem fornecidos corretamente e forem válidos', async () => {
 
-    req.body.email = 'john.doe@example.com'
-    req.body.password = 'password123'
-
     User.findOne = jest.fn().mockResolvedValue({});
 
     await login(req, res, next);
@@ -202,7 +176,6 @@ describe('login middleware', () => {
   it('deve retornar um erro de status 400 se algum dos dados de entrada estiver faltando', async () => {
 
     req.body.email = '';
-    req.body.password = 'password123';
 
     await login(req, res, next);
 
@@ -221,7 +194,6 @@ describe('login middleware', () => {
   it('deve retornar um erro de status 400 se algum dos dados de entrada for inválido', async () => {
 
     req.body.email = '    ';
-    req.body.password = 'password123';
 
     await login(req, res, next);
 
@@ -274,8 +246,6 @@ describe('forgotPassword middleware', () => {
   });
 
   it('deve chamar o próximo middleware se o email de entrada for fornecido corretamente e for válido', async () => {
-
-    req.body.email = 'john.doe@example.com';
 
     User.findOne = jest.fn().mockResolvedValue({});
 
@@ -353,7 +323,6 @@ describe('recoverPassword middleware', () => {
   it('deve retornar um erro de status 400 se o token ou a nova senha de entrada estiverem faltando', async () => {
 
     req.body.token = '';
-    req.body.newPassword = 'abcdfg';
 
     await recoverPassword(req, res, next);
 

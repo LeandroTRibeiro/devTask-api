@@ -3,15 +3,22 @@ import { Request, Response } from "express";
 import nodemailer from 'nodemailer';
 import JWT from 'jsonwebtoken';
 import dotenv from 'dotenv';
+import cloudinary from 'cloudinary';
+import User from "../schemas/User";
 
-import User from "../models/User";
+import * as JwtTypes from '../types/jwtTypes';
+import * as UserTypes from '../types/userTypes';
+import sharp from "sharp";
+import { unlink } from "fs/promises";
+import { Types } from 'mongoose';
 
 dotenv.config();
 
-interface DecodeType {
-    email: string,
-    password?: string
-};
+cloudinary.v2.config({
+    cloud_name: process.env.CLOUD_NAME as string,
+    api_key: process.env.API_KEY as string,
+    api_secret: process.env.API_SECRET as string
+});
 
 export const signin = async (req: Request, res: Response) => {
 
@@ -28,15 +35,15 @@ export const signin = async (req: Request, res: Response) => {
 
     const user = new User;
 
-    user.name.firstName = res.locals.firstName;
-    user.name.lastName = res.locals.lastName;
+    user.firstName = res.locals.firstName;
+    user.lastName = res.locals.lastName;
     user.email = res.locals.email;
     user.password = password;
     user.token = token
 
     await user.save();
 
-    res.json({token, user: "created"})
+    res.status(201).json({token, user: "created", id: user._id})
 };
 
 export const autoLogin = async (req: Request, res: Response) => {
@@ -59,8 +66,8 @@ export const autoLogin = async (req: Request, res: Response) => {
 
     await user.save();
 
-    res.json({ autoLogin: true, token: newToken });
-
+    res.json({ autoLogin: true, token: newToken, id: user._id });
+    
 };
 
 export const login = async (req: Request, res: Response) => {
@@ -77,7 +84,7 @@ export const login = async (req: Request, res: Response) => {
     const decode = JWT.verify(
         user.password,
         process.env.JWT_SECRET_PASSWORD_KEY as string
-    ) as DecodeType;
+    ) as JwtTypes.DecodeType;
 
     if(password !== decode.password || email !== decode.email) {
         res.status(400).json({ error: `email or password invalid.` });
@@ -93,7 +100,7 @@ export const login = async (req: Request, res: Response) => {
 
     await user.save();
 
-    res.json({ allowed: true, token });
+    res.json({ allowed: true, token, id: user._id });
     
 };  
 
@@ -234,7 +241,7 @@ export const tokenVerification = async (req: Request, res:Response) => {
         const decode = JWT.verify(
             token,
             process.env.JWT_SECRET_RECOVER_PASSWORD as string
-        ) as DecodeType;
+        ) as JwtTypes.DecodeType;
 
         res.json({ token: true });
 
@@ -254,7 +261,7 @@ export const recoverPassword = async (req: Request, res: Response) => {
         const decode = JWT.verify(
             token,
             process.env.JWT_SECRET_RECOVER_PASSWORD as string
-        ) as DecodeType;
+        ) as JwtTypes.DecodeType;
 
         const user = await User.findOne({ email: decode.email });
 
@@ -279,11 +286,110 @@ export const recoverPassword = async (req: Request, res: Response) => {
 
         await user.save();
 
-        res.json({ recovered: true,  token: newToken});
+        res.json({ recovered: true,  token: newToken, id: user.id});
 
     } catch(error) {
 
         res.status(400).json({error : 'token invalid or expired.'});
     };    
 
+};
+
+// below controllers need tests
+
+export const getUserInfo = async (req: Request, res: Response) => {
+
+    const id = req.params.id as string;
+
+    if(!Types.ObjectId.isValid(id)) {
+        res.status(400).json({ error: 'not fount' });
+        return;
+    };
+    
+    const user = await User.findOne({ _id: id });
+    
+    if(!user) {
+        res.status(400).json({ error: 'not fount' });
+        return;
+    };
+
+    const decoded = JWT.verify(
+        user.password,
+        process.env.JWT_SECRET_PASSWORD_KEY as string
+    ) as JwtTypes.DecodeType;
+
+    res.json({ 
+        avatar: user.avatar,
+        firstName: user.firstName,
+        lastName: user.lastName,
+        email: user.email,
+        password: decoded.password,
+        birthday: user.birthday
+    });
+};
+
+export const updateUserInfo = async (req: Request, res: Response) => {
+
+    const id = req.params.id as string; 
+
+    const user = await User.findOne({ _id: id }) as UserTypes.UserData;
+    
+    if(!user) {
+        res.status(400).json({ error: 'not fount' });
+        return;
+    };
+
+    if(res.locals.password) {
+
+        const password = JWT.sign({ 
+            email: user.email, 
+            password: res.locals.password },
+            process.env.JWT_SECRET_PASSWORD_KEY as string
+        );
+
+        res.locals.password = password;
+    };
+    
+    if(res.locals.avatar) {
+
+        try {
+
+            const filename =  `${res.locals.avatar.filename}.png`;
+
+            await sharp(res.locals.avatar.path).resize(300).toFormat('png').toFile(`./public/${filename}`);
+
+            await unlink(res.locals.avatar.path);
+
+            const cloud = await cloudinary.v2.uploader.upload(`./public/${filename}`, {public_id: res.locals.avatar.filename});
+
+            await unlink(`./public/${filename}`);
+            
+            res.locals.avatar = cloud.url;
+            
+        } catch(error) {
+
+            res.status(500).json({error});
+
+        }
+    }
+
+    const update: UserTypes.UpdateDataType = {};
+    
+    for(let key in res.locals) {
+        if(res.locals[key] !== user[key]) {
+            user[key] = res.locals[key];
+            update[key] = res.locals[key];
+        };
+    };
+    
+    if(Object.keys(update).length > 0) {
+
+        await user.save();
+
+        res.json({ update });
+        
+        return;
+    };
+
+    res.json({error: 'no data changed'});
 };
