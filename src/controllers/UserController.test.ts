@@ -1,14 +1,33 @@
-import request from 'supertest';
 import { app } from '../server';
-import { disconnect } from 'mongoose';
+import request from 'supertest';
+
 import User from '../schemas/User';
+import { disconnect } from 'mongoose';
+
+import fs from 'fs';
+import { Blob } from 'buffer';
+
 import JWT from 'jsonwebtoken';
 import dotenv from 'dotenv';
+import cloudinary from 'cloudinary';
 
 dotenv.config();
 
+cloudinary.v2.config({
+    cloud_name: process.env.CLOUD_NAME as string,
+    api_key: process.env.API_KEY as string,
+    api_secret: process.env.API_SECRET as string
+});
+
 afterAll((done) => {
+
     app.close( async () => {
+
+        const user = await User.findOne({ email: 'lalala@hotmail.com' });
+
+        if(user) {
+            await cloudinary.v2.uploader.destroy(user.avatar.substring(user.avatar.lastIndexOf('/') + 1, user.avatar.length - 4));
+        }
 
         await User.deleteMany();
         disconnect();
@@ -240,7 +259,7 @@ describe('recoverPassword controller', () => {
         expect(response.body).toHaveProperty('error', 'user not found.');
     });
 
-    it('deve retornar status 400 caso nova senha não for valido.', async () => {
+    it('deve retornar status 400 caso nova senha não seja valida.', async () => {
 
         const token = JWT.sign(
             {email: "john@doe.com"},
@@ -295,4 +314,61 @@ describe('getUserInfo controller', () => {
         expect(response.body).toHaveProperty('error', 'not fount');
 
     });
+});
+
+describe('updateUserInfo controller', () => {
+
+    it('deve retornar todas as informações que foram atualizadas do usuário', async () => {
+
+        const user = await User.findOne({email: process.env.EMAIL_TEST as string});
+
+        const readableToBuffer = async (readable: any): Promise<Buffer> => {
+            const chunks: Uint8Array[] = [];
+            for await (const chunk of readable) {
+              chunks.push(chunk);
+            }
+            return Buffer.concat(chunks);
+        };
+
+        const avatarPath = './public/test.png';
+        const avatarData = fs.readFileSync(avatarPath);
+        const avatarBlob  = new Blob([avatarData], { type: 'image/png' });
+
+        const avatarBuffer = await readableToBuffer(avatarBlob.stream());
+
+        const response = await request(app)
+        .put(`/devtask/${user?._id}/user`)
+        .field('firstName', 'John2')
+        .field('lastName', 'Doe3')
+        .field('email', 'lalala@hotmail.com')
+        .field('password', '987654')
+        .field('birthday', '1991-12-09')
+        .attach('avatar', avatarBuffer, 'test.png')
+        .expect(200);
+
+
+        expect(response.body).toHaveProperty('update');
+        expect(response.body.update).toHaveProperty('avatar');
+        expect(response.body.update).toHaveProperty('firstName', 'John2');
+        expect(response.body.update).toHaveProperty('lastName', 'Doe3');
+        expect(response.body.update).toHaveProperty('email', 'lalala@hotmail.com');
+        expect(response.body.update).toHaveProperty('password', '987654');
+        expect(response.body.update).toHaveProperty('birthday', '1991-12-09');
+        
+    });
+
+    it('deve retornar status 400 caso a senha seja igual a atual', async () => {
+
+        const user = await User.findOne({email: 'lalala@hotmail.com'});
+
+        const response = await request(app)
+        .put(`/devtask/${user?._id}/user`)
+        .field('password', '987654')
+        .expect(400);
+
+
+        expect(response.body).toHaveProperty('error', 'no data changed');
+        
+    });
+
 });

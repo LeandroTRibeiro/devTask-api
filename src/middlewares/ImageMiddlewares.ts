@@ -23,7 +23,6 @@ export const errorHandler: ErrorRequestHandler = (error, req, res, next) => {
     if (error instanceof MulterError) {
         res.json({ error: error.message });
     } else {
-        console.log(error);
         res.json({ error: 'invalid image' });
     }
 

@@ -28,7 +28,13 @@ router.put('/devtask/recoverpassword', UserMiddleware.recoverPassword, UserContr
 // below need test
 
 router.get('/devtask/:id/user', UserController.getUserInfo);
-router.put('/devtask/:id/user', ImageMiddleware.uploadImage.single('avatar'), UserMiddleware.updateUserInfo, UserController.updateUserInfo);
+
+router.put(
+    '/devtask/:id/user', 
+    ImageMiddleware.uploadImage.single('avatar'), 
+    UserMiddleware.updateUserInfo, 
+    UserController.updateUserInfo
+);
 
 router.get('/devtask/:id/dashboard', DashboardController.getDashBoardInfo);
 

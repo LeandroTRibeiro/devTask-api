@@ -295,8 +295,6 @@ export const recoverPassword = async (req: Request, res: Response) => {
 
 };
 
-// below controllers need tests
-
 export const getUserInfo = async (req: Request, res: Response) => {
 
     const id = req.params.id as string;
@@ -339,7 +337,11 @@ export const updateUserInfo = async (req: Request, res: Response) => {
         return;
     };
 
+    const update: UserTypes.UpdateDataType = {};
+
     if(res.locals.password) {
+
+        update.password = res.locals.password;
 
         const password = JWT.sign({ 
             email: user.email, 
@@ -360,7 +362,7 @@ export const updateUserInfo = async (req: Request, res: Response) => {
 
             await unlink(res.locals.avatar.path);
 
-            const cloud = await cloudinary.v2.uploader.upload(`./public/${filename}`, {public_id: res.locals.avatar.filename});
+            const cloud = await cloudinary.v2.uploader.upload(`./public/${filename}`, {public_id: res.locals.avatar.filename});            
 
             await unlink(`./public/${filename}`);
             
@@ -373,12 +375,10 @@ export const updateUserInfo = async (req: Request, res: Response) => {
         }
     }
 
-    const update: UserTypes.UpdateDataType = {};
-    
     for(let key in res.locals) {
         if(res.locals[key] !== user[key]) {
             user[key] = res.locals[key];
-            update[key] = res.locals[key];
+            if(key !== 'password') update[key] = res.locals[key];
         };
     };
     
@@ -391,5 +391,7 @@ export const updateUserInfo = async (req: Request, res: Response) => {
         return;
     };
 
-    res.json({error: 'no data changed'});
+    res.status(400).json({error: 'no data changed'});
 };
+
+// below controllers need tests

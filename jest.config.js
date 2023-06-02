@@ -3,4 +3,5 @@ module.exports = {
   preset: 'ts-jest',
   testEnvironment: 'node',
   detectOpenHandles: true,
+  testTimeout: 10000,
 };

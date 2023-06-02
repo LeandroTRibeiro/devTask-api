@@ -1,6 +1,7 @@
 import { reviewName } from './ValidateUserData';
 import { reviewEmail } from './ValidateUserData';
 import { reviewPassword } from './ValidateUserData';
+import { reviewBirthday } from './ValidateUserData';
 
 describe('reviewName', () => {
     it('deve retornar o nome com as palavras capitalizadas', () => {
@@ -84,4 +85,50 @@ describe('reviewPassword', () => {
         const resultado = reviewPassword(password);
         expect(resultado).toBe('senha12345');
     });
+});
+
+describe('reviewBirthday', () => {
+
+  it('deve retornar a data AAAA-MM-DD se estiver no formato correto', () => {
+      const birthday = '1991-04-01';
+      const resultado = reviewBirthday(birthday);
+      expect(resultado).toBe('1991-04-01');
+  });
+
+  it('deve retornar a data AAAA-M-D se estiver no formato correto', () => {
+    const birthday = '1991-4-1';
+    const resultado = reviewBirthday(birthday);
+    expect(resultado).toBe('1991-4-1');
+  });
+
+  it('deve retornar uma string vazia caso o formato esteja invalido', () => {
+    const birthday = '19910401';
+    const resultado = reviewBirthday(birthday);
+    expect(resultado).toBe('');
+  });
+
+  it('deve retornar uma string vazia caso o formato esteja invalido', () => {
+    const birthday = '1-9-9-1--0-4-0-1';
+    const resultado = reviewBirthday(birthday);
+    expect(resultado).toBe('');
+  });
+
+  it('deve retornar uma string vazia caso o mes seja invalido', () => {
+    const birthday = '1991-13-04';
+    const resultado = reviewBirthday(birthday);
+    expect(resultado).toBe('');
+  });
+
+  it('deve retornar uma string vazia caso o ano seja invalido', () => {
+    const birthday = '3000-13-04';
+    const resultado = reviewBirthday(birthday);
+    expect(resultado).toBe('');
+  });
+
+  it('deve retornar uma string vazia caso o dia seja invalido', () => {
+    const birthday = '3000-13-77';
+    const resultado = reviewBirthday(birthday);
+    expect(resultado).toBe('');
+  });
+
 });

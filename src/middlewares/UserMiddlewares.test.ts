@@ -4,8 +4,11 @@ import {
   login,
   forgotPassword,
   recoverPassword,
+  updateUserInfo
 } from './UserMiddlewares';
+
 import User from '../schemas/User';
+import JWT from 'jsonwebtoken';
 
 jest.mock('../schemas/User', () => ({
   findOne: jest.fn(),
@@ -351,3 +354,140 @@ describe('recoverPassword middleware', () => {
     expect(res.json).toHaveBeenCalledWith({ error: 'password invalid.' });
   });
 });
+
+describe('updateUserInfo middleware', () => {
+  let req: Request;
+  let res: Response;
+  let next: NextFunction;
+
+  beforeEach(() => {
+    req = Object.assign({}, req, {
+      body: {
+        firstName: 'John',
+        lastName: 'Doe',
+        email: 'john@doe.com',
+        password: '123456',
+        birthday: '1992-04-12'
+      },
+      params: {
+        id: '1234'
+      },
+    }) as Request;
+
+    res = {
+      status: jest.fn().mockReturnThis(),
+      json: jest.fn(),
+    } as unknown as Response;
+    next = jest.fn();
+  });
+
+  it('deve retornar status 400 se o usuário não for encontrado', async () => {
+
+    jest.spyOn(User, 'findOne').mockResolvedValueOnce(undefined);
+
+    await updateUserInfo(req, res, next);
+
+    expect(res.status).toHaveBeenCalledWith(400);
+    expect(res.json).toHaveBeenCalledWith({ error: 'not found' });
+    expect(next).not.toHaveBeenCalled();
+  });
+
+  it('deve retornar status 400 se o req.body estiver vazio', async () => {
+
+    req.body = {};
+
+    jest.spyOn(User, 'findOne').mockResolvedValueOnce({});
+
+    await updateUserInfo(req, res, next);
+
+    expect(res.status).toHaveBeenCalledWith(400);
+    expect(res.json).toHaveBeenCalledWith({ error: 'data required' });
+    expect(next).not.toHaveBeenCalled();
+  });
+
+  it('deve retornar status 400 se o firstName for inválido', async () => {
+
+    req.body.firstName = '    ';
+    req.body.password = undefined;
+
+    jest.spyOn(User, 'findOne').mockResolvedValueOnce({});
+
+    await updateUserInfo(req, res, next);
+
+    expect(res.status).toHaveBeenCalledWith(400);
+    expect(res.json).toHaveBeenCalledWith({ error: 'firstName invalid.' });
+    expect(next).not.toHaveBeenCalled();
+  });
+
+  it('deve retornar status 400 se o lastName for inválido', async () => {
+
+    req.body.lastName = '    ';
+    req.body.password = undefined;
+
+    jest.spyOn(User, 'findOne').mockResolvedValueOnce({});
+
+    await updateUserInfo(req, res, next);
+
+    expect(res.status).toHaveBeenCalledWith(400);
+    expect(res.json).toHaveBeenCalledWith({ error: 'lastName invalid.' });
+    expect(next).not.toHaveBeenCalled();
+  });
+
+  it('deve retornar status 400 se o email for inválido', async () => {
+
+    req.body.email = 'john doe';
+    req.body.password = undefined;
+
+    jest.spyOn(User, 'findOne').mockResolvedValueOnce({});
+
+    await updateUserInfo(req, res, next);
+
+    expect(res.status).toHaveBeenCalledWith(400);
+    expect(res.json).toHaveBeenCalledWith({ error: 'email invalid.' });
+    expect(next).not.toHaveBeenCalled();
+  });
+
+  it('deve retornar status 400 se o password for inválido', async () => {
+
+    req.body.password = '    ';
+
+    jest.spyOn(User, 'findOne').mockResolvedValueOnce({});
+
+    jest.spyOn(JWT, 'verify').mockImplementation((password, secret) => {
+      return {
+        password: '123456',
+      };
+    });
+
+
+    await updateUserInfo(req, res, next);
+
+    expect(res.status).toHaveBeenCalledWith(400);
+    expect(res.json).toHaveBeenCalledWith({ error: 'password invalid.' });
+    expect(next).not.toHaveBeenCalled();
+  });
+
+  it('deve retornar status 400 se o birthday for inválido', async () => {
+
+    req.body.birthday = '    ';
+
+    jest.spyOn(User, 'findOne').mockResolvedValueOnce({});
+
+    await updateUserInfo(req, res, next);
+
+    expect(res.status).toHaveBeenCalledWith(400);
+    expect(res.json).toHaveBeenCalledWith({ error: 'birthday invalid.' });
+    expect(next).not.toHaveBeenCalled();
+  });
+
+  it('deve chamar o next caso as informações forem validas', async () => {
+
+    jest.spyOn(User, 'findOne').mockResolvedValueOnce({});
+
+    await updateUserInfo(req, res, next);
+
+    expect(next).toHaveBeenCalled();
+  });
+
+});
+

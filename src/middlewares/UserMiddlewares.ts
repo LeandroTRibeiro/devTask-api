@@ -126,16 +126,14 @@ export const recoverPassword = async (req:Request, res: Response, next: NextFunc
     next();
 };
 
-// below middlewares need tests
-
 export const updateUserInfo = async (req: Request, res: Response, next: NextFunction) => {
     
     const id = req.params.id as string; 
-
+    
     const user = await User.findOne({ _id: id });
     
     if(!user) {
-        res.status(400).json({ error: 'not fount' });
+        res.status(400).json({ error: 'not found' });
         return;
     };
 
@@ -187,3 +185,5 @@ export const updateUserInfo = async (req: Request, res: Response, next: NextFunc
 
     next();
 };
+
+// below middlewares need tests
