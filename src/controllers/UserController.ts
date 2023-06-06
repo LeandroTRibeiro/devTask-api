@@ -354,6 +354,10 @@ export const updateUserInfo = async (req: Request, res: Response) => {
     
     if(res.locals.avatar) {
 
+        if(user.avatar) {
+            await cloudinary.v2.uploader.destroy(user.avatar.substring(user.avatar.lastIndexOf('/') + 1, user.avatar.length - 4));
+        };
+
         try {
 
             const filename =  `${res.locals.avatar.filename}.png`;

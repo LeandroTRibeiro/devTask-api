@@ -156,7 +156,7 @@ export const updateUserInfo = async (req: Request, res: Response, next: NextFunc
     if(data.email !== undefined) {
         data.email = ValidateUserData.reviewEmail(data.email);
         const otherUser = await User.findOne({ email: data.email});
-        if(data.email === user.email || otherUser) data.email = undefined;
+        if(data.email === user.email || otherUser) data.email = '';
     };
 
     if(data.password !== undefined) {
