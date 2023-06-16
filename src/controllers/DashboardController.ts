@@ -1,5 +1,7 @@
 import { Request, Response } from "express";
 
+import * as DateHelpers from '../helpers/datesHelpers';
+
 import User from "../schemas/User";
 
 export const getDashBoardInfo = async (req: Request, res: Response) => {
@@ -13,5 +15,7 @@ export const getDashBoardInfo = async (req: Request, res: Response) => {
         return;
     };
 
-    res.json({ user });
+    const date = DateHelpers.getDate();
+
+    res.json({ user, date });
 };
